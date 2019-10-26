@@ -1,28 +1,32 @@
 <?php
+
 namespace KanbanBoard;
 
 class Utilities
 {
-	private function __construct() {
-	}
+    private function __construct()
+    {
+    }
 
-	public static function env($name, $default = NULL) {
-		$value = getenv($name);
-		if($default !== NULL) {
-			if(!empty($value))
-				return $value;
-			return $default;
-		}
-		return (empty($value) && $default === NULL) ? die('Environment variable ' . $name . ' not found or has no value') : $value;
-	}
+    /**
+     * @return mixed
+     */
+    public static function env(string $name, $default = NULL)
+    {
+        $value = getenv($name);
 
-	public static function hasValue($array, $key) {
-		return is_array($array) && array_key_exists($key, $array) && !empty($array[$key]);
-	}
+        if (!empty($value)) {
+            return $value;
+        }
+        if (!empty($defalut)) {
+            return $default;
+        }
 
-	public static function dump($data) {
-		echo '<pre>';
-		var_dump($data);
-		echo '</pre>';
-	}
+        die (sprintf('Environment variable %s not found or has no value', $name));
+    }
+
+    public static function hasValue(?array $array, string $key): bool
+    {
+        return is_array($array) && array_key_exists($key, $array) && !empty($array[$key]);
+    }
 }
