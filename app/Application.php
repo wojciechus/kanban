@@ -3,30 +3,26 @@
 namespace App;
 
 use App\Api\GithubClient;
-use App\Models\Issue;
-use App\Repositories\IssueRepository;
+use App\Providers\IssueProvider;
 use App\Repositories\MilestoneRepository;
 
 class Application
 {
-    private $github;
+    private $githubClient;
     private $repositories;
-    private $pausedLabels;
     private $milestoneRepository;
-    private $issueRepository;
+    private $issueProvider;
 
     public function __construct(
-        GithubClient $github,
+        GithubClient $githubClient,
         MilestoneRepository $milestoneRepository,
-        IssueRepository $issueRepository,
-        array $repositories,
-        array $paused_labels = []
+        IssueProvider $issueProvider,
+        array $repositories
     ) {
-        $this->github = $github;
+        $this->githubClient = $githubClient;
         $this->repositories = $repositories;
-        $this->pausedLabels = $paused_labels;
         $this->milestoneRepository = $milestoneRepository;
-        $this->issueRepository = $issueRepository;
+        $this->issueProvider = $issueProvider;
     }
 
     public function board(): array
@@ -43,7 +39,7 @@ class Application
 
         ksort($milestones);
         foreach ($milestones as $milestone) {
-            $issues = $this->issues($milestone->getRepository(), $milestone->getNumber());
+            $issues = $this->issueProvider->getIssues($milestone->getRepository(), $milestone->getNumber());
             $percent = $this->percent($milestone->getClosedIssues(), $milestone->getOpenIssues());
             if ($percent) {
                 $milestonesViewModel[] = [
@@ -57,55 +53,7 @@ class Application
             }
         }
 
-        return $milestonesViewModel;
-    }
-
-    private function issues(string $repository, int $milestoneId): array
-    {
-        $issues = $this->issueRepository->getByRepositoryAndMilestoneId($repository, $milestoneId);
-        /** @var Issue $singleIssue */
-        foreach ($issues as $singleIssue) {
-            if ($singleIssue->isSetPullRequest()) {
-                continue;
-            }
-            $issues[$this->getState($singleIssue)][] = [
-                'id' => $singleIssue->getId(),
-                'number' => $singleIssue->getNumber(),
-                'title' => $singleIssue->getTitle(),
-                'body' => $singleIssue->getBody(),
-                'url' => $singleIssue->getUrl(),
-                'assignee' => $singleIssue->getAssignee(),
-                'paused' => $singleIssue->isPaused(),
-                'closed' => $singleIssue->getClosed(),
-            ];
-        }
-
-        return $this->sortIssues($issues);
-    }
-
-    private function sortIssues(array $issues): array
-    {
-        if (!empty($issues['active'])) {
-            usort($issues['active'], function (array $a, array $b) {
-                if ($a['paused'] === $b['paused']) {
-                    return strcmp($a['title'], $b['title']);
-                }
-
-                return $a['paused'] ? -1 : 1;
-            });
-        }
-
-        return $issues;
-    }
-
-    private function getState(Issue $issue): string
-    {
-        if ($issue->getState() === 'closed')
-            return 'completed';
-        else if (null != $issue->getAssignee())
-            return 'active';
-        else
-            return 'queued';
+        return $milestonesViewModel ?? [];
     }
 
     private function percent(int $complete, int $remaining): array

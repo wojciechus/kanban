@@ -5,6 +5,7 @@ namespace App;
 use App\Api\GithubClient;
 use App\Authentication\Authentication;
 use App\Environment\EnvironmentResolver;
+use App\Providers\IssueProvider;
 use App\Repositories\IssueRepository;
 use App\Repositories\MilestoneRepository;
 use Mustache_Engine;
@@ -35,13 +36,12 @@ class Bootstrap
         $token = $this->authentication->login();
         $githubClient = new GithubClient($token, EnvironmentResolver::env('GH_ACCOUNT'));
         $milestoneRepository = new MilestoneRepository($githubClient);
-        $issueRepository = new IssueRepository($githubClient);
+        $issueProvider = new IssueProvider(new IssueRepository($githubClient));
         $application = new Application(
             $githubClient,
             $milestoneRepository,
-            $issueRepository,
-            $this->repositories,
-            self::PAUSED_LABELS
+            $issueProvider,
+            $this->repositories
         );
 
         echo $this->mustacheEngine->render(
