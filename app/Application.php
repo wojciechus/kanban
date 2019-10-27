@@ -3,115 +3,125 @@
 namespace App;
 
 use App\Api\GithubClient;
-use App\Environment\EnvironmentResolver;
-use App\Services\ArrayChecker;
-use \Michelf\Markdown;
+use App\Models\Issue;
+use App\Repositories\IssueRepository;
+use App\Repositories\MilestoneRepository;
 
 class Application
 {
     private $github;
     private $repositories;
-    private $paused_labels;
+    private $pausedLabels;
+    private $milestoneRepository;
+    private $issueRepository;
 
-    public function __construct(GithubClient $github, array $repositories, array $paused_labels = [])
-    {
+    public function __construct(
+        GithubClient $github,
+        MilestoneRepository $milestoneRepository,
+        IssueRepository $issueRepository,
+        array $repositories,
+        array $paused_labels = []
+    ) {
         $this->github = $github;
         $this->repositories = $repositories;
-        $this->paused_labels = $paused_labels;
+        $this->pausedLabels = $paused_labels;
+        $this->milestoneRepository = $milestoneRepository;
+        $this->issueRepository = $issueRepository;
     }
 
-    public function board()
+    public function board(): array
     {
-        $ms = array();
+        $milestones = [];
         foreach ($this->repositories as $repository) {
-            foreach ($this->github->milestones($repository) as $data) {
-                $ms[$data['title']] = $data;
-                $ms[$data['title']]['repository'] = $repository;
+            $repositoryMilestones = $this->milestoneRepository->getByRepository($repository);
+            foreach ($repositoryMilestones as &$singleMilestone) {
+                $singleMilestone->setRepository($repository);
             }
+
+            $milestones = array_merge($milestones, $repositoryMilestones);
         }
-        ksort($ms);
-        foreach ($ms as $name => $data) {
-            $issues = $this->issues($data['repository'], $data['number']);
-            $percent = self::_percent($data['closed_issues'], $data['open_issues']);
+
+        ksort($milestones);
+        foreach ($milestones as $milestone) {
+            $issues = $this->issues($milestone->getRepository(), $milestone->getNumber());
+            $percent = $this->percent($milestone->getClosedIssues(), $milestone->getOpenIssues());
             if ($percent) {
-                $milestones[] = array(
-                    'milestone' => $name,
-                    'url' => $data['html_url'],
+                $milestonesViewModel[] = [
+                    'milestone' => $milestone->getTitle(),
+                    'url' => $milestone->getHtmlUrl(),
                     'progress' => $percent,
                     'queued' => $issues['queued'],
                     'active' => $issues['active'],
-                    'completed' => $issues['completed']
-                );
+                    'completed' => $issues['completed'],
+                ];
             }
         }
-        return $milestones;
+
+        return $milestonesViewModel;
     }
 
-    private function issues($repository, $milestone_id)
+    private function issues(string $repository, int $milestoneId): array
     {
-        $issues = $this->github->issues($repository, $milestone_id);
+        $issues = $this->issueRepository->getByRepositoryAndMilestoneId($repository, $milestoneId);
+        /** @var Issue $singleIssue */
         foreach ($issues as $singleIssue) {
-            if (isset($singleIssue['pull_request']))
+            if ($singleIssue->isSetPullRequest()) {
                 continue;
-            $issues[self::_state($singleIssue)][] = [
-                'id' => $singleIssue['id'], 'number' => $singleIssue['number'],
-                'title' => $singleIssue['title'],
-                'body' => Markdown::defaultTransform($singleIssue['body']),
-                'url' => $singleIssue['html_url'],
-                'assignee' => (is_array($singleIssue) && array_key_exists('assignee', $singleIssue) && !empty($singleIssue['assignee'])) ? $singleIssue['assignee']['avatar_url'] . '?s=16' : NULL,
-                'paused' => self::labels_match($singleIssue, $this->paused_labels),
-                'progress' => self::_percent(
-                    substr_count(strtolower($singleIssue['body']), '[x]'),
-                    substr_count(strtolower($singleIssue['body']), '[ ]')),
-                'closed' => $singleIssue['closed_at']
+            }
+            $issues[$this->getState($singleIssue)][] = [
+                'id' => $singleIssue->getId(),
+                'number' => $singleIssue->getNumber(),
+                'title' => $singleIssue->getTitle(),
+                'body' => $singleIssue->getBody(),
+                'url' => $singleIssue->getUrl(),
+                'assignee' => $singleIssue->getAssignee(),
+                'paused' => $singleIssue->isPaused(),
+                'closed' => $singleIssue->getClosed(),
             ];
         }
 
+        return $this->sortIssues($issues);
+    }
+
+    private function sortIssues(array $issues): array
+    {
         if (!empty($issues['active'])) {
-            usort($issues['active'], function ($a, $b) {
-                return count($a['paused']) - count($b['paused']) === 0 ? strcmp($a['title'], $b['title']) : count($a['paused']) - count($b['paused']);
+            usort($issues['active'], function (array $a, array $b) {
+                if ($a['paused'] === $b['paused']) {
+                    return strcmp($a['title'], $b['title']);
+                }
+
+                return $a['paused'] ? -1 : 1;
             });
         }
 
         return $issues;
     }
 
-    private static function _state($issue)
+    private function getState(Issue $issue): string
     {
-        if ($issue['state'] === 'closed')
+        if ($issue->getState() === 'closed')
             return 'completed';
-        else if (ArrayChecker::hasValue($issue, 'assignee') && count($issue['assignee']) > 0)
+        else if (null != $issue->getAssignee())
             return 'active';
         else
             return 'queued';
     }
 
-    private static function labels_match($issue, $needles)
-    {
-        if (ArrayChecker::hasValue($issue, 'labels')) {
-            foreach ($issue['labels'] as $label) {
-                if (in_array($label['name'], $needles)) {
-                    return array($label['name']);
-                }
-            }
-        }
-
-        return array();
-
-    }
-
-    private static function _percent($complete, $remaining)
+    private function percent(int $complete, int $remaining): array
     {
         $total = $complete + $remaining;
         if ($total > 0) {
-            $percent = ($complete OR $remaining) ? round($complete / $total * 100) : 0;
-            return array(
+            $percent = ($complete || $remaining) ? round($complete / $total * 100) : 0;
+
+            return [
                 'total' => $total,
                 'complete' => $complete,
                 'remaining' => $remaining,
                 'percent' => $percent
-            );
+            ];
         }
-        return array();
+
+        return [];
     }
 }

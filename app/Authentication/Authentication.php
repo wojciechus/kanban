@@ -31,9 +31,7 @@ class Authentication
 //$this->logout(); $this->tokenService->setShouldRedirect(true);
         $token = NULL;
 
-//        var_dump($_SESSION);
         if ($this->tokenService->isTokenInSession()) {
-//            var_dump('dupa');
             return $this->tokenService->getTokenFromSession();
         }
 
@@ -44,7 +42,7 @@ class Authentication
             $this->tokenService->setShouldRedirect(true);
             $this->redirectToGithub();
         }
-    //    $this->logout();
+        $this->logout();
         $_SESSION['gh-token'] = $token;
 
         return $token;
