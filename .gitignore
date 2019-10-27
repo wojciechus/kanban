@@ -1,4 +1,4 @@
 /log
-/app/vendor
+/vendor
 .env
 .idea
