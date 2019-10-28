@@ -4,8 +4,10 @@ namespace App;
 
 use App\Api\GithubClient;
 use App\Authentication\Authentication;
+use App\Container\ContainerFactory;
 use App\Environment\EnvironmentResolver;
 use App\Providers\IssueProvider;
+use App\Providers\MilestoneProvider;
 use App\Repositories\IssueRepository;
 use App\Repositories\MilestoneRepository;
 use App\Services\FulfillingCalculator;
@@ -19,8 +21,8 @@ class Bootstrap
     private const VIEWS_DIR = '../app/Views';
 
     private $authentication;
-    private $repositories;
     private $mustacheEngine;
+    private $containerFactory;
 
     public function __construct(Authentication $authentication)
     {
@@ -30,23 +32,14 @@ class Bootstrap
                 'loader' => new Mustache_Loader_FilesystemLoader(self::VIEWS_DIR),
             ]
         );
-        $this->repositories = explode('|', EnvironmentResolver::env('GH_REPOSITORIES'));
+        $this->containerFactory = new ContainerFactory();
     }
 
     public function run(): void
     {
         $token = $this->authentication->login();
-        $githubClient = new GithubClient($token, EnvironmentResolver::env('GH_ACCOUNT'));
-        $milestoneRepository = new MilestoneRepository($githubClient);
-        $issueProvider = new IssueProvider(new IssueRepository($githubClient), new IssuesSorter());
-        $fulfillingCalculator = new FulfillingCalculator();
-        $application = new Application(
-            $githubClient,
-            $milestoneRepository,
-            $issueProvider,
-            $fulfillingCalculator,
-            $this->repositories
-        );
+        $container = $this->containerFactory->getContainer($token);
+        $application = new Application($container);
 
         echo $this->mustacheEngine->render(
             'index',

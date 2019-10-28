@@ -4,62 +4,36 @@ namespace App;
 
 use App\Api\GithubClient;
 use App\Enum\KanbanIssueStatus;
+use App\Environment\EnvironmentResolver;
+use App\Models\Container;
 use App\Models\MilestoneViewModel;
 use App\Providers\IssueProvider;
+use App\Providers\MilestoneProvider;
 use App\Repositories\MilestoneRepository;
 use App\Services\FulfillingCalculator;
 
 class Application
 {
     private $githubClient;
-    private $repositories;
     private $milestoneRepository;
     private $issueProvider;
     private $fulfillingCalculator;
+    private $milestoneProvider;
+    /**
+     * @var Container
+     */
+    private $container;
 
-    public function __construct(
-        GithubClient $githubClient,
-        MilestoneRepository $milestoneRepository,
-        IssueProvider $issueProvider,
-        FulfillingCalculator $fulfillingCalculator,
-        array $repositories
-    )
+    public function __construct(Container $container)
     {
-        $this->githubClient = $githubClient;
-        $this->repositories = $repositories;
-        $this->milestoneRepository = $milestoneRepository;
-        $this->issueProvider = $issueProvider;
-        $this->fulfillingCalculator = $fulfillingCalculator;
+        $this->container = $container;
     }
 
     public function board(): array
     {
-        $milestones = [];
-        foreach ($this->repositories as $repository) {
-            $repositoryMilestones = $this->milestoneRepository->getByRepository($repository);
-            foreach ($repositoryMilestones as &$singleMilestone) {
-                $singleMilestone->setRepository($repository);
-            }
+        $repositories = explode('|', EnvironmentResolver::env('GH_REPOSITORIES'));
+        $milestones = $this->container->getMilestoneProvider()->getAllWithRepositories($repositories);
 
-            $milestones = array_merge($milestones, $repositoryMilestones);
-        }
-
-        ksort($milestones);
-        foreach ($milestones as $milestone) {
-            $issues = $this->issueProvider->getIssues($milestone->getRepository(), $milestone->getNumber());
-            $percent = $this->fulfillingCalculator->percent($milestone->getClosedIssues(), $milestone->getOpenIssues());
-            if ($percent) {
-                $milestonesViewModels[] = new MilestoneViewModel(
-                    $milestone->getTitle(),
-                    $milestone->getHtmlUrl(),
-                    $percent,
-                    $issues[KanbanIssueStatus::QUEUED],
-                    $issues[KanbanIssueStatus::ACTIVE],
-                    $issues[KanbanIssueStatus::COMPLETED]
-                );
-            }
-        }
-
-        return $milestonesViewModels ?? [];
+        return $this->container->getKanbanProvider()->getKanbanFeed($milestones);
     }
 }
