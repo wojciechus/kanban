@@ -7,6 +7,8 @@ use Michelf\Markdown;
 
 class Issue
 {
+    public const STATE_CLOSED = 'closed';
+
     private $pullRequest = null;
     private $id;
     private $number;
@@ -84,7 +86,7 @@ class Issue
         }
 
         return false;
-      }
+    }
 
     public function getClosed(): ?string
     {

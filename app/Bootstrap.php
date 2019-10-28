@@ -8,6 +8,8 @@ use App\Environment\EnvironmentResolver;
 use App\Providers\IssueProvider;
 use App\Repositories\IssueRepository;
 use App\Repositories\MilestoneRepository;
+use App\Services\FulfillingCalculator;
+use App\Services\IssuesSorter;
 use Mustache_Engine;
 use Mustache_Loader_FilesystemLoader;
 
@@ -36,11 +38,13 @@ class Bootstrap
         $token = $this->authentication->login();
         $githubClient = new GithubClient($token, EnvironmentResolver::env('GH_ACCOUNT'));
         $milestoneRepository = new MilestoneRepository($githubClient);
-        $issueProvider = new IssueProvider(new IssueRepository($githubClient));
+        $issueProvider = new IssueProvider(new IssueRepository($githubClient), new IssuesSorter());
+        $fulfillingCalculator = new FulfillingCalculator();
         $application = new Application(
             $githubClient,
             $milestoneRepository,
             $issueProvider,
+            $fulfillingCalculator,
             $this->repositories
         );
 

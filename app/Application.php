@@ -3,8 +3,11 @@
 namespace App;
 
 use App\Api\GithubClient;
+use App\Enum\KanbanIssueStatus;
+use App\Models\MilestoneViewModel;
 use App\Providers\IssueProvider;
 use App\Repositories\MilestoneRepository;
+use App\Services\FulfillingCalculator;
 
 class Application
 {
@@ -12,17 +15,21 @@ class Application
     private $repositories;
     private $milestoneRepository;
     private $issueProvider;
+    private $fulfillingCalculator;
 
     public function __construct(
         GithubClient $githubClient,
         MilestoneRepository $milestoneRepository,
         IssueProvider $issueProvider,
+        FulfillingCalculator $fulfillingCalculator,
         array $repositories
-    ) {
+    )
+    {
         $this->githubClient = $githubClient;
         $this->repositories = $repositories;
         $this->milestoneRepository = $milestoneRepository;
         $this->issueProvider = $issueProvider;
+        $this->fulfillingCalculator = $fulfillingCalculator;
     }
 
     public function board(): array
@@ -40,36 +47,19 @@ class Application
         ksort($milestones);
         foreach ($milestones as $milestone) {
             $issues = $this->issueProvider->getIssues($milestone->getRepository(), $milestone->getNumber());
-            $percent = $this->percent($milestone->getClosedIssues(), $milestone->getOpenIssues());
+            $percent = $this->fulfillingCalculator->percent($milestone->getClosedIssues(), $milestone->getOpenIssues());
             if ($percent) {
-                $milestonesViewModel[] = [
-                    'milestone' => $milestone->getTitle(),
-                    'url' => $milestone->getHtmlUrl(),
-                    'progress' => $percent,
-                    'queued' => $issues['queued'],
-                    'active' => $issues['active'],
-                    'completed' => $issues['completed'],
-                ];
+                $milestonesViewModels[] = new MilestoneViewModel(
+                    $milestone->getTitle(),
+                    $milestone->getHtmlUrl(),
+                    $percent,
+                    $issues[KanbanIssueStatus::QUEUED],
+                    $issues[KanbanIssueStatus::ACTIVE],
+                    $issues[KanbanIssueStatus::COMPLETED]
+                );
             }
         }
 
-        return $milestonesViewModel ?? [];
-    }
-
-    private function percent(int $complete, int $remaining): array
-    {
-        $total = $complete + $remaining;
-        if ($total > 0) {
-            $percent = ($complete || $remaining) ? round($complete / $total * 100) : 0;
-
-            return [
-                'total' => $total,
-                'complete' => $complete,
-                'remaining' => $remaining,
-                'percent' => $percent
-            ];
-        }
-
-        return [];
+        return $milestonesViewModels ?? [];
     }
 }

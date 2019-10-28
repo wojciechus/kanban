@@ -4,12 +4,12 @@ namespace App\Models;
 
 class MilestoneViewModel
 {
-    private $milestone;
+    public $milestone;
     public $url;
-    private $progress;
-    private $queued;
-    private $active;
-    private $completed;
+    public $progress;
+    public $queued;
+    public $active;
+    public $completed;
 
     public function __construct(
         $milestone,
@@ -19,7 +19,6 @@ class MilestoneViewModel
         $active,
         $completed
     ) {
-
         $this->milestone = $milestone;
         $this->url = $url;
         $this->progress = $progress;
