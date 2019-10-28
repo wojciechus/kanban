@@ -22,13 +22,12 @@ class Authentication
     public function logout(): void
     {
         unset($_SESSION['gh-token']);
-//     unset ($_SESSION['redirected']);
     }
 
     public function login(): ?string
     {
         session_start();
-//$this->logout(); $this->tokenService->setShouldRedirect(true);
+
         $token = NULL;
 
         if ($this->tokenService->isTokenInSession()) {
@@ -61,27 +60,28 @@ class Authentication
     private function returnsFromGithub($code)
     {
         $url = 'https://github.com/login/oauth/access_token';
-        $data = array(
+        $data = [
             'code' => $code,
             'state' => 'LKHYgbn776tgubkjhk',
             'client_id' => $this->clientId,
-            'client_secret' => $this->clientSecret);
-        $options = array(
-            'http' => array(
+            'client_secret' => $this->clientSecret
+        ];
+        $options = [
+            'http' => [
                 'method' => 'POST',
                 'header' => "Content-type: application/x-www-form-urlencoded\r\n",
                 'content' => http_build_query($data),
-            ),
-        );
+            ],
+        ];
         $context = stream_context_create($options);
         $result = file_get_contents($url, false, $context);
-        var_dump($result);
+
         if ($result === FALSE)
-        die('Error');
+            die('Error');
         $result = explode('=', explode('&', $result)[0]);
-        var_dump($result);
+
         array_shift($result);
-        var_dump($result);
+
         return array_shift($result);
     }
 }

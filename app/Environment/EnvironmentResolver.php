@@ -11,13 +11,15 @@ class EnvironmentResolver
     /**
      * @return mixed
      */
-    public static function env(string $name, $default = NULL)
+    public static function env(string $name)
     {
         $value = getenv($name);
 
         if (!empty($value)) {
             return $value;
         }
+
+        $default= ConfigDefault::getDefault($name);
         if (!empty($defalut)) {
             return $default;
         }
