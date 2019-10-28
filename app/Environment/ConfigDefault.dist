@@ -4,13 +4,15 @@ namespace App\Environment;
 
 class ConfigDefault
 {
-    private $GH_CLIENT_ID = '......';
-    private $GH_CLIENT_SECRET = '......';
-    private $GH_ACCOUNT = '......';
-    private $GH_REPOSITORIES = '......';
+    private const DEFAULTS = [
+        'GH_CLIENT_ID' => 'clientIdString',
+        'GH_CLIENT_SECRET' => 'clientSecretString',
+        'GH_ACCOUNT' => 'account-only-name',
+        'GH_REPOSITORIES' => 'myRepo1|myRepo2',
+    ];
 
-    public function getDefault(string $name): string
+    public static function getDefault(string $name): string
     {
-        return $this->$name;
+        return self::DEFAULTS[$name];
     }
 }

@@ -19,8 +19,9 @@ class EnvironmentResolver
             return $value;
         }
 
-        $default= ConfigDefault::getDefault($name);
-        if (!empty($defalut)) {
+        $default = ConfigDefault::getDefault($name);
+
+        if (!empty($default)) {
             return $default;
         }
 
