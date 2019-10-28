@@ -2,4 +2,4 @@
 /vendor
 .env
 .idea
-/app/Environment/ConfigDefault
+/app/Environment/ConfigDefault.php

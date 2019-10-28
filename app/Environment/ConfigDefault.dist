@@ -1,0 +1,16 @@
+<?php
+
+namespace App\Environment;
+
+class ConfigDefault
+{
+    private $GH_CLIENT_ID = '......';
+    private $GH_CLIENT_SECRET = '......';
+    private $GH_ACCOUNT = '......';
+    private $GH_REPOSITORIES = '......';
+
+    public function getDefault(string $name): string
+    {
+        return $this->$name;
+    }
+}
