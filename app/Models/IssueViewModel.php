@@ -4,37 +4,13 @@ namespace App\Models;
 
 class IssueViewModel
 {
-    /**
-     * @var string|null
-     */
-     public $closed;
-    /**
-     * @var int
-     */
+    public $closed;
     public $id;
-    /**
-     * @var int
-     */
     public $number;
-    /**
-     * @var string
-     */
     public $title;
-    /**
-     * @var string
-     */
     public $body;
-    /**
-     * @var string
-     */
     public $url;
-    /**
-     * @var string|null
-     */
     public $assignee;
-    /**
-     * @var bool
-     */
     public $paused;
 
     public function __construct(Issue $singleIssue)
@@ -49,17 +25,11 @@ class IssueViewModel
         $this->closed = $singleIssue->getClosed();
     }
 
-    /**
-     * @return string
-     */
     public function getTitle(): string
     {
         return $this->title;
     }
 
-    /**
-     * @return bool
-     */
     public function isPaused(): bool
     {
         return $this->paused;

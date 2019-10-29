@@ -3,11 +3,9 @@
 namespace App\Authentication;
 
 use App\Environment\EnvironmentResolver;
-use App\Services\ArrayChecker;
 
 class Authentication
 {
-
     private $clientId = NULL;
     private $clientSecret = NULL;
     private $tokenService;
@@ -47,7 +45,7 @@ class Authentication
         return $token;
     }
 
-    private function redirectToGithub()
+    private function redirectToGithub(): void
     {
         $url = 'Location: https://github.com/login/oauth/authorize';
         $url .= '?client_id=' . $this->clientId;

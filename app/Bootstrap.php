@@ -2,16 +2,8 @@
 
 namespace App;
 
-use App\Api\GithubClient;
 use App\Authentication\Authentication;
 use App\Container\ContainerFactory;
-use App\Environment\EnvironmentResolver;
-use App\Providers\IssueProvider;
-use App\Providers\MilestoneProvider;
-use App\Repositories\IssueRepository;
-use App\Repositories\MilestoneRepository;
-use App\Services\FulfillingCalculator;
-use App\Services\IssuesSorter;
 use Mustache_Engine;
 use Mustache_Loader_FilesystemLoader;
 

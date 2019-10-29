@@ -12,14 +12,15 @@ class MilestoneViewModel
     public $completed;
 
     public function __construct(
-        $milestone,
+        $titleMilestone,
         $url,
         $progress,
         $queued,
         $active,
         $completed
-    ) {
-        $this->milestone = $milestone;
+    )
+    {
+        $this->milestone = $titleMilestone;
         $this->url = $url;
         $this->progress = $progress;
         $this->queued = $queued;
@@ -27,100 +28,63 @@ class MilestoneViewModel
         $this->completed = $completed;
     }
 
-    /**
-     * @return mixed
-     */
-    public function getMilestone()
+    public function getMilestone(): string
     {
         return $this->milestone;
     }
 
-    /**
-     * @param mixed $milestone
-     */
-    public function setMilestone($milestone): void
+    public function setMilestone(string $milestone): void
     {
         $this->milestone = $milestone;
     }
 
-    /**
-     * @return mixed
-     */
-    public function getUrl()
+    public function getUrl(): string
     {
         return $this->url;
     }
 
-    /**
-     * @param mixed $url
-     */
-    public function setUrl($url): void
+    public function setUrl(string $url): void
     {
         $this->url = $url;
     }
 
-    /**
-     * @return mixed
-     */
-    public function getProgress()
+    public function getProgress(): ?array
     {
         return $this->progress;
     }
 
-    /**
-     * @param mixed $progress
-     */
-    public function setProgress($progress): void
+    public function setProgress(?array $progress): void
     {
         $this->progress = $progress;
     }
 
-    /**
-     * @return mixed
-     */
-    public function getQueued()
+    public function getQueued(): array
     {
         return $this->queued;
     }
 
-    /**
-     * @param mixed $queued
-     */
-    public function setQueued($queued): void
+    public function setQueued(array $queued): void
     {
         $this->queued = $queued;
     }
 
-    /**
-     * @return mixed
-     */
-    public function getActive()
+    public function getActive(): array
     {
         return $this->active;
     }
 
-    /**
-     * @param mixed $active
-     */
-    public function setActive($active): void
+    public function setActive(array $active): void
     {
         $this->active = $active;
     }
 
-    /**
-     * @return mixed
-     */
-    public function getCompleted()
+    public function getCompleted(): array
     {
         return $this->completed;
     }
 
-    /**
-     * @param mixed $completed
-     */
-    public function setCompleted($completed): void
+    public function setCompleted(array $completed): void
     {
         $this->completed = $completed;
     }
-
 }
