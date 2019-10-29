@@ -7,16 +7,16 @@ use App\Models\Issue;
 
 class IssueRepository
 {
-    private $github;
+    private $githubClient;
 
-    public function __construct(GithubClient $github)
+    public function __construct(GithubClient $githubClient)
     {
-        $this->github = $github;
+        $this->githubClient = $githubClient;
     }
 
     public function getByRepositoryAndMilestoneId(string $repositoryName, int $milestoneId): array
     {
-        $result = $this->github->issues($repositoryName, $milestoneId);
+        $result = $this->githubClient->getIssues($repositoryName, $milestoneId);
         $issues = [];
         foreach ($result as $issue) {
             $issues[] = new Issue(

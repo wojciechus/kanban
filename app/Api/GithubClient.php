@@ -13,7 +13,6 @@ class GithubClient
     private const MILESTONE_STATE_ALL = 'all';
 
     private $client;
-    private $milestoneApi;
     private $account;
 
     public function __construct(?string $token, string $account)
@@ -25,15 +24,17 @@ class GithubClient
             ]
         ));
         $this->client->authenticate($token, Client::AUTH_HTTP_TOKEN);
-        $this->milestoneApi = $this->client->api(self::ISSUES_KEY)->milestones();
     }
 
-    public function milestones(string $repository): array
+    public function getMilestones(string $repository): array
     {
-        return $this->milestoneApi->all($this->account, $repository);
+        return $this->client
+            ->api(self::ISSUES_KEY)
+            ->milestones()
+            ->all($this->account, $repository);
     }
 
-    public function issues(string $repository, int $milestoneId): array
+    public function getIssues(string $repository, int $milestoneId): array
     {
         $issueParameters = [
             'milestone' => $milestoneId,

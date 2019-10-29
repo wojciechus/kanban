@@ -37,7 +37,7 @@ class KanbanProvider
         return $milestonesViewModels ?? [];
     }
 
-    public function sort(array $milestones): array
+    private function sort(array $milestones): array
     {
         ksort($milestones);
 

@@ -7,16 +7,16 @@ use App\Models\Milestone;
 
 class MilestoneRepository
 {
-    private $github;
+    private $githubClient;
 
-    public function __construct(GithubClient $github)
+    public function __construct(GithubClient $githubClient)
     {
-        $this->github = $github;
+        $this->githubClient = $githubClient;
     }
 
     public function getByRepository(string $repositoryName): array
     {
-        $result = $this->github->milestones($repositoryName);
+        $result = $this->githubClient->getMilestones($repositoryName);
         $milestones = [];
         foreach ($result as $milestone) {
             $milestones[] = new Milestone(
